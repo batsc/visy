@@ -1,0 +1,45 @@
+The background image is the Meteosat infrared image (date and time (UTC) of this image are shown in the upper-left corner of the image).
+
+Note :
+When RDT is produced with lightning data as optional input, a thick black line shows the limits of the domain corresponding to a spatial accuracy better than 6 km for 50% of the flashes detected by the French Météorage/Météo-France lightning detection network (map of spatial accuracy of the French Météorage/Météo-France lightning detection network in 2002). Only lightning flashes detected inside this domain are considered.
+
+The different characteristics of the convective objects are displayed through a multilevel visualisation:
+
+1. The first level corresponds to the superposition of graphical attributes onto the corresponding infrared image.
+
+    These graphical attributes are:
+
+    a. A coloured contour which defines cloud system edges.
+    The colour of this contour is related to the life-cycle stage of the system. More precisely :
+
+        yellow contour when the system is detected for the first time ("triggering" of the system),
+        red     contour when the system is growing,
+        violet  contour  when the system is mature,
+        blue   contour when the system is decreasing,
+
+
+    The thickness of this contour is related to the temperature tendency of systems: the greater the cooling, the thicker the contour.
+    The style of the contour (dashed/plain) indicates which method has been applied to diagnose the convective nature of the system :
+
+        a plain contour means that the convective nature of the cloud systems was diagnosed using lightning data (at least one lightning impact was detected below the cloud system)
+        a dashed contour means that the convective nature of the cloud systems was diagnosed from satellite features only.
+
+
+    b. A green contour shows the edges of the system in the previous satellite image.
+
+    c. A yellow line shows the trajectory of the system (all previous locations of the centre of gravity of the system in past images).
+
+    d. A black arrow shows the expected move of the system for the next half hour.
+
+
+
+2. The second level allows to access to numerical values of some characteristics of the cloud system..
+
+    These values are displayed into an interactive window. Its visualisation is activated by moving the mouse inside the contour of the corresponding cloud system.
+
+3. The third level allows to visualise time series of past evolution of the following characteristics of the cloud system :
+
+    a. Number of positive and negative lightning impacts registered below the convective system,
+    b. Area of the system at different brightness temperature thresholds
+    c. Thresholding and minimum brightness temperature of the system.
+    The visualisation of these series is also interactive and is activated by simple-click inside the contour of the corresponding cloud system.
