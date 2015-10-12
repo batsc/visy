@@ -1,5 +1,13 @@
 
+
+look at 
+
+http://simonsarris.com/blog/510-making-html5-canvas-useful
+
+
+
 var canv_id = "drawing_canvas";
+var in_area = false;
 
 // Wait for document ready
 $( document ).ready(function() {
@@ -11,16 +19,20 @@ $( document ).ready(function() {
   // Draw
   poly = new Path2D();
   poly.rect(50, 25, 150, 100);
-  ctx.stroke(poly);
+  ctx.stroke();
 
   canvas.addEventListener("mousemove", function(event){
 //     var rect = poly.getBoundingClientRect();
     var x = event.clientX - $("#" + canv_id).offset().left;
     var y = event.clientY - $("#" + canv_id).offset().top;
 
-    if ( ctx.isPointInPath(poly, x, y) ) {
+    if ( ctx.isPointInPath(poly, x, y) && in_area == false) {
       console.log('X:' + parseInt(x) + 'Y:' + parseInt(y));
-    };
+      in_area = true;
+    }
+    else {
+      in_area = false;
+    }
   });
 
 // ctx.beginPath();
