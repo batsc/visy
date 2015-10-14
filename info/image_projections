@@ -1,0 +1,2 @@
+&proj area='UK', id=3, nx=820,  ny=945,  lon1=-13.25,   lat1=59.0,   lon2=2.0,    lat2=50.0    /
+&proj area='EW', id=3, nx=1180, ny=1180, lon1=-44.790,  lat1=61.434, lon2=17.194, lat2=32.754  /
