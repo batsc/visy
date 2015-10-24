@@ -27,8 +27,10 @@ class CloudSystems(object):
         ''' Scale the coords to be contained within width/height box
         '''
         # Max/min lats and lons (not sure of this)
-        self.latmax, self.lonmax = max([max(val.coords) for val in self.systems])
-        self.latmin, self.lonmin = min([min(val.coords) for val in self.systems])
+        self.latmax = max([item[0] for val in self.systems for item in val.coords])
+        self.latmin = min([item[0] for val in self.systems for item in val.coords])
+        self.lonmax = max([item[1] for val in self.systems for item in val.coords])
+        self.lonmin = min([item[1] for val in self.systems for item in val.coords])
         self.mx = width / (self.lonmax - self.lonmin)
         self.cx = width - self.mx * self.lonmax
         self.my = height / (self.latmax - self.latmin)
