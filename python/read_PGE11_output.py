@@ -23,6 +23,22 @@ class CloudSystems(object):
             region
         '''
         pass
+    def scale_coords(self, width, height):
+        ''' Scale the coords to be contained within width/height box
+        '''
+        # Max/min lats and lons (not sure of this)
+        self.latmax, self.lonmax = max([max(val.coords) for val in self.systems])
+        self.latmin, self.lonmin = min([min(val.coords) for val in self.systems])
+        self.mx = width / (self.lonmax - self.lonmin)
+        self.cx = width - self.mx * self.lonmax
+        self.my = height / (self.latmax - self.latmin)
+        self.cy = height - self.my * self.latmax
+        
+        for i, system in enumerate(self.systems):
+            self.systems[i].coords_scaled = []
+            for coords in system.coords:
+                self.systems[i].coords_scaled.append(
+                    [self.my * coords[0] + self.cy, self.mx * coords[1] + self.cx])
     def to_json_file(self, filename):
         ''' Output to JSON format
         '''
@@ -30,7 +46,7 @@ class CloudSystems(object):
         for system in self.systems:
             uid = "feature_" + "{:0>4d}".format(system.uid)
             json_dict[uid] = {} 
-            json_dict[uid]['coords'] = system.coords
+            json_dict[uid]['coords'] = system.coords_scaled
         
         with open(filename, "w") as text_file:
             text_file.write(json.dumps(json_dict))
