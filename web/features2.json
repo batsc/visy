@@ -1,8 +1,0 @@
-{
-  "Feature_001" : { "coords" : [ [40, 30], [30, 85], [134, 103], [150, 90] ],
-                    "strokeStyle" : "red" },
-  "Feature_002" : { "coords" : [ [140, 130], [80, 185], [334, 53], [158, 12] ],
-                    "strokeStyle" : "blue" },
-  "Feature_003" : { "coords" : [ [20, 230], [330, 285], [144, 203], [50, 40] ],
-                    "strokeStyle" : "green" }
-}

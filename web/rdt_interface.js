@@ -2,6 +2,15 @@
 var init_lineWidth = 2;
 var hover_lineWidth = 5;
 
+// Temporary scaling settings
+var latmax = 70;
+var latmin = 30;
+var lonmin = -10;
+var lonmax = 30;
+var mx,cx,my,cy;
+var written = false;
+var scale_coords = true;
+
 // Constructor for Shape objects to hold data for all drawn objects.
 function Shape(coords, stroke_color, name) {
   this.coords = coords;
@@ -12,10 +21,24 @@ function Shape(coords, stroke_color, name) {
 
 // Draws this shape to a given context
 Shape.prototype.draw = function(ctx, selected) {
+  var scaled_coords = this.coords;  // this needs to copy - doesn't currently
+  
+  if (scale_coords == true) {
+    scale_coords = false;
+    for (var i=0; i<this.coords.length; i++) {
+      scaled_coords[i][0] = my * this.coords[i][0] + cy;
+      scaled_coords[i][1] = mx * this.coords[i][1] + cx;
+    }
+  }
+  if (written == false) {
+    written = true;
+    console.log(this.coords);
+    console.log(scaled_coords);
+  }
   ctx.beginPath();
-  ctx.moveTo(this.coords[0][0],this.coords[0][1]);
-  for (var i=1; i<this.coords.length; i++) {
-    ctx.lineTo(this.coords[i][0],this.coords[i][1]);
+  ctx.moveTo(scaled_coords[0][1], scaled_coords[0][0]);
+  for (var i=1; i<scaled_coords.length; i++) {
+    ctx.lineTo(scaled_coords[i][1], scaled_coords[i][0]);
   }
   ctx.closePath();
   ctx.strokeStyle = this.stroke_color;
@@ -37,6 +60,10 @@ function CanvasState(canvas) {
   this.width = canvas.width;
   this.height = canvas.height;
   this.ctx = canvas.getContext('2d');
+  mx = this.width / (lonmax - lonmin);
+  cx = this.width - mx * lonmax;
+  my = this.height / (latmax - latmin);
+  cy = this.height - my * latmax;
 
   // This complicates things a little but but fixes mouse co-ordinate problems
   // when there's a border or padding. See getMouse for more detail

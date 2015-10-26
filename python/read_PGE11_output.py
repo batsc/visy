@@ -2,6 +2,7 @@
 import json
 
 file = '../output/SAFNWC_MSG3_RDT__201507011515_ukamv_______.buf_section4'
+outfile = '../web/features.json'
 
 class System(object):
     ''' Class to contain RDT information for a detected system
@@ -27,10 +28,10 @@ class CloudSystems(object):
         ''' Scale the coords to be contained within width/height box
         '''
         # Max/min lats and lons (not sure of this)
-        self.latmax = max([item[0] for val in self.systems for item in val.coords])
-        self.latmin = min([item[0] for val in self.systems for item in val.coords])
-        self.lonmax = max([item[1] for val in self.systems for item in val.coords])
-        self.lonmin = min([item[1] for val in self.systems for item in val.coords])
+        self.latmax = 70.0
+        self.latmin = 30.0
+        self.lonmax = 30.0
+        self.lonmin = -10.0
         self.mx = width / (self.lonmax - self.lonmin)
         self.cx = width - self.mx * self.lonmax
         self.my = height / (self.latmax - self.latmin)
@@ -48,7 +49,7 @@ class CloudSystems(object):
         for system in self.systems:
             uid = "feature_" + "{:0>4d}".format(system.uid)
             json_dict[uid] = {} 
-            json_dict[uid]['coords'] = system.coords_scaled
+            json_dict[uid]['coords'] = system.coords
         
         with open(filename, "w") as text_file:
             text_file.write(json.dumps(json_dict))
@@ -77,3 +78,10 @@ def read_RDT_section4(filename):
                 cs.systems[-1].add_coord(lat_lon)
                 continue
     return cs
+    
+if __name__ == "__main__":
+    cs = read_RDT_section4(file)
+    cs.systems = cs.systems
+#    cs.scale_coords(800,500)
+    cs.to_json_file(outfile)
+    
