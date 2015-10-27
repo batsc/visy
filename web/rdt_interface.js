@@ -5,11 +5,9 @@ var hover_lineWidth = 5;
 // Temporary scaling settings
 var latmax = 70;
 var latmin = 30;
-var lonmin = -10;
-var lonmax = 30;
+var lonmin = -20;
+var lonmax = 20;
 var mx,cx,my,cy;
-var written = false;
-var scale_coords = true;
 
 // Constructor for Shape objects to hold data for all drawn objects.
 function Shape(coords, stroke_color, name) {
@@ -21,24 +19,10 @@ function Shape(coords, stroke_color, name) {
 
 // Draws this shape to a given context
 Shape.prototype.draw = function(ctx, selected) {
-  var scaled_coords = this.coords;  // this needs to copy - doesn't currently
-  
-  if (scale_coords == true) {
-    scale_coords = false;
-    for (var i=0; i<this.coords.length; i++) {
-      scaled_coords[i][0] = my * this.coords[i][0] + cy;
-      scaled_coords[i][1] = mx * this.coords[i][1] + cx;
-    }
-  }
-  if (written == false) {
-    written = true;
-    console.log(this.coords);
-    console.log(scaled_coords);
-  }
   ctx.beginPath();
-  ctx.moveTo(scaled_coords[0][1], scaled_coords[0][0]);
-  for (var i=1; i<scaled_coords.length; i++) {
-    ctx.lineTo(scaled_coords[i][1], scaled_coords[i][0]);
+  ctx.moveTo(mx * this.coords[0][1] + cx, ctx.canvas.height - (my * this.coords[0][0] + cy));
+  for (var i=1; i<this.coords.length; i++) {
+    ctx.lineTo(mx * this.coords[i][1] + cx, ctx.canvas.height - (my * this.coords[i][0] + cy));
   }
   ctx.closePath();
   ctx.strokeStyle = this.stroke_color;
@@ -186,7 +170,50 @@ CanvasState.prototype.getMouse = function(e) {
 
 // When document ready...
 $(document).ready(function() {
+  var width=400;
+  var height = 300;
+  
+var projection = d3.geo.equirectangular()
+    .scale(753)
+    .center([0.0, 50.0])
+    .translate([width / 2, height / 2])
+    .precision(.1);
 
+var path = d3.geo.path()
+    .projection(projection);
+
+var graticule = d3.geo.graticule();
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+svg.append("path")
+    .datum(graticule)
+    .attr("class", "graticule")
+    .attr("d", path);
+
+d3.json("world-50m.json", function(error, world) {
+  if (error) throw error;
+  console.log(path.bounds(world));
+
+  svg.insert("path", ".graticule")
+      .datum(topojson.feature(world, world.objects.land))
+      .attr("class", "land")
+      .attr("d", path);
+
+  svg.insert("path", ".graticule")
+      .datum(topojson.mesh(world, world.objects.countries, function(a, b) { return a !== b; }))
+      .attr("class", "boundary")
+      .attr("d", path);
+});
+
+d3.select(self.frameElement).style("height", height + "px");
+
+      
+      
+      
+      
   var s = new CanvasState(document.getElementById('canvas'));
 
   $.getJSON('features.json')

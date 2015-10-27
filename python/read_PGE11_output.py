@@ -24,24 +24,6 @@ class CloudSystems(object):
             region
         '''
         pass
-    def scale_coords(self, width, height):
-        ''' Scale the coords to be contained within width/height box
-        '''
-        # Max/min lats and lons (not sure of this)
-        self.latmax = 70.0
-        self.latmin = 30.0
-        self.lonmax = 30.0
-        self.lonmin = -10.0
-        self.mx = width / (self.lonmax - self.lonmin)
-        self.cx = width - self.mx * self.lonmax
-        self.my = height / (self.latmax - self.latmin)
-        self.cy = height - self.my * self.latmax
-        
-        for i, system in enumerate(self.systems):
-            self.systems[i].coords_scaled = []
-            for coords in system.coords:
-                self.systems[i].coords_scaled.append(
-                    [self.my * coords[0] + self.cy, self.mx * coords[1] + self.cx])
     def to_json_file(self, filename):
         ''' Output to JSON format
         '''
@@ -64,19 +46,23 @@ def read_RDT_section4(filename):
     with open(file) as f:
         for line in f:
             # New system if num vertices specified
-            if line.find('Number of points of contour of the cloud system') > 0:
+            if line.find('Number of points of contour of the cloud system') >= 0:
                 uid += 1
                 num_vertices = int(line.split(' ')[-1])
                 cs.systems.append(System(uid, num_vertices))
                 continue
             # If these are coordinates, they alternate latitude, then longitude
-            if line.find('Latitude (coarse accuracy) of one point of contour') > 0:
+            if line.find('Latitude (coarse accuracy) of one point of contour') >= 0:
                 lat_lon = [float(line.split(' ')[-1])]
                 continue
-            elif line.find('Longitude (coarse accuracy) of one point of contour') > 0:
+            elif line.find('Longitude (coarse accuracy) of one point of contour') >= 0:
                 lat_lon.append(float(line.split(' ')[-1]))
                 cs.systems[-1].add_coord(lat_lon)
                 continue
+            # Only keep this system is the convective type is known
+            if line.find('Convective system or other cloud system') >= 0:
+                if line.split(' ')[-1].upper().find('UNKNOWN') >= 0:
+                    cs.systems.pop()
     return cs
     
 if __name__ == "__main__":

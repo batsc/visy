@@ -3,11 +3,35 @@
 <head>
   <meta charset="utf-8" />
   <link rel="stylesheet" href="my_style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js" charset="utf-8"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/1.6.19/topojson.min.js"></script>
   <script type="text/javascript" src="http://code.jquery.com/jquery.min.js"></script>
   <script type="text/javascript" src="rdt_interface.js"></script>
+
+<style>
+
+.graticule {
+  fill: none;
+  stroke: #777;
+  stroke-width: .5px;
+  stroke-opacity: .5;
+}
+
+.land {
+  fill: #222;
+}
+
+.boundary {
+  fill: none;
+  stroke: #fff;
+  stroke-width: .5px;
+}
+
+</style>
 </head>
 <body>
 
+  <div id="vis"></div>
   <canvas id="canvas" width="800" height="500"></canvas>
 
   <div id="info_area"></div>
