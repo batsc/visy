@@ -2,27 +2,31 @@
 var init_lineWidth = 2;
 var hover_lineWidth = 5;
 
-// Temporary scaling settings
-var latmax = 70;
-var latmin = 30;
-var lonmin = -20;
-var lonmax = 20;
+// Temporary scaling settings (EW area)
+var topleftlat = 61.434;
+var topleftlon = -44.790;
+var botrighlat = 32.754;
+var botrighlon = 17.194;
+
 var mx,cx,my,cy;
 
 // Constructor for Shape objects to hold data for all drawn objects.
 function Shape(coords, stroke_color, name) {
   this.coords = coords;
-  this.stroke_color = stroke_color || '#AAAAAA';
+  this.stroke_color = stroke_color || '#AA0000';
   this.name = name || 'null';
   this.active = false;
 }
 
 // Draws this shape to a given context
 Shape.prototype.draw = function(ctx, selected) {
+  var x,y;
+  [x, y] = geo_to_stereo(this.coords[0][1], this.coords[0][0]);
   ctx.beginPath();
-  ctx.moveTo(mx * this.coords[0][1] + cx, ctx.canvas.height - (my * this.coords[0][0] + cy));
+  ctx.moveTo(mx * x + cx, ctx.canvas.height - (my * y + cy));
   for (var i=1; i<this.coords.length; i++) {
-    ctx.lineTo(mx * this.coords[i][1] + cx, ctx.canvas.height - (my * this.coords[i][0] + cy));
+    [x, y] = geo_to_stereo(this.coords[i][1], this.coords[i][0]);
+    ctx.lineTo(mx * x + cx, ctx.canvas.height - (my * y + cy));
   }
   ctx.closePath();
   ctx.strokeStyle = this.stroke_color;
@@ -40,14 +44,16 @@ Shape.prototype.draw = function(ctx, selected) {
 
 function CanvasState(canvas) {
   // Setup
+  var [leftlim, uplim] = geo_to_stereo(topleftlon, topleftlat);
+  var [rightlim, botlim] = geo_to_stereo(botrighlon, botrighlat);
   this.canvas = canvas;
   this.width = canvas.width;
   this.height = canvas.height;
   this.ctx = canvas.getContext('2d');
-  mx = this.width / (lonmax - lonmin);
-  cx = this.width - mx * lonmax;
-  my = this.height / (latmax - latmin);
-  cy = this.height - my * latmax;
+  mx = this.width / (rightlim - leftlim);
+  cx = this.width - mx * rightlim;
+  my = this.height / (uplim - botlim);
+  cy = this.height - my * uplim;
 
   // This complicates things a little but but fixes mouse co-ordinate problems
   // when there's a border or padding. See getMouse for more detail
@@ -167,52 +173,29 @@ CanvasState.prototype.getMouse = function(e) {
   return {x: mx, y: my};
 }
 
+// Converts from degrees to radians.
+Math.radians = function(degrees) {
+  return degrees * Math.PI / 180;
+};
+ 
+// Converts from radians to degrees.
+Math.degrees = function(radians) {
+  return radians * 180 / Math.PI;
+};
+
+// Convert geographic coords to stereographic view
+function geo_to_stereo(lon, lat){
+  var lon0 = 0;
+  var lat0 = 90;
+  var x = Math.sin(Math.radians(lon - lon0)) *
+          Math.tan(Math.radians(90 - lat)) / 2;
+  var y = Math.cos(Math.radians(lon - lon0)) *
+          Math.tan(Math.radians(90 - lat)) / 2;
+  return [x,y];
+}
 
 // When document ready...
 $(document).ready(function() {
-  var width=400;
-  var height = 300;
-  
-var projection = d3.geo.equirectangular()
-    .scale(753)
-    .center([0.0, 50.0])
-    .translate([width / 2, height / 2])
-    .precision(.1);
-
-var path = d3.geo.path()
-    .projection(projection);
-
-var graticule = d3.geo.graticule();
-
-var svg = d3.select("body").append("svg")
-    .attr("width", width)
-    .attr("height", height);
-
-svg.append("path")
-    .datum(graticule)
-    .attr("class", "graticule")
-    .attr("d", path);
-
-d3.json("world-50m.json", function(error, world) {
-  if (error) throw error;
-  console.log(path.bounds(world));
-
-  svg.insert("path", ".graticule")
-      .datum(topojson.feature(world, world.objects.land))
-      .attr("class", "land")
-      .attr("d", path);
-
-  svg.insert("path", ".graticule")
-      .datum(topojson.mesh(world, world.objects.countries, function(a, b) { return a !== b; }))
-      .attr("class", "boundary")
-      .attr("d", path);
-});
-
-d3.select(self.frameElement).style("height", height + "px");
-
-      
-      
-      
       
   var s = new CanvasState(document.getElementById('canvas'));
 

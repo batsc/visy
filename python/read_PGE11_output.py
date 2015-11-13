@@ -67,7 +67,5 @@ def read_RDT_section4(filename):
     
 if __name__ == "__main__":
     cs = read_RDT_section4(file)
-    cs.systems = cs.systems
-#    cs.scale_coords(800,500)
     cs.to_json_file(outfile)
     

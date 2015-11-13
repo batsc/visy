@@ -1,3 +1,8 @@
 #canvas {
   border:  dashed black 1px;
+  position: absolute;
+}
+
+img {
+  position: absolute;
 }
