@@ -1,6 +1,6 @@
 // Settings
-var init_lineWidth = 2;
-var hover_lineWidth = 5;
+var init_lineWidth = 1;
+var hover_lineWidth = 3;
 
 // Temporary scaling settings (EW area)
 var topleftlat = 61.434;
@@ -187,10 +187,11 @@ Math.degrees = function(radians) {
 function geo_to_stereo(lon, lat){
   var lon0 = 0;
   var lat0 = 90;
-  var x = Math.sin(Math.radians(lon - lon0)) *
-          Math.tan(Math.radians(90 - lat)) / 2;
-  var y = Math.cos(Math.radians(lon - lon0)) *
-          Math.tan(Math.radians(90 - lat)) / 2;
+  var a = 6378.169;
+  var b = 6356.5838;
+  var t = 2.0 * Math.tan( 0.5 * Math.radians(90.0 - lat));
+  var x = t * Math.sin(Math.radians(lon - lon0));
+  var y = -t * Math.cos(Math.radians(lon - lon0));
   return [x,y];
 }
 
