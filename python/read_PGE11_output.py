@@ -7,9 +7,8 @@ outfile = '../web/features.json'
 class System(object):
     ''' Class to contain RDT information for a detected system
     '''
-    def __init__(self, id, num_vertices):
+    def __init__(self, id):
         self.uid = id
-        self.num_vertices = num_vertices
         self.coords = []
     def add_coord(self, coords):
         self.coords.append(coords)
@@ -24,48 +23,56 @@ class CloudSystems(object):
             region
         '''
         pass
-    def to_json_file(self, filename):
+    def to_json(self):
         ''' Output to JSON format
         '''
-        json_dict = {}
+        self.json_dict = {}
         for system in self.systems:
             uid = "feature_" + "{:0>4d}".format(system.uid)
-            json_dict[uid] = {} 
-            json_dict[uid]['coords'] = system.coords
-        
+            self.json_dict[uid] = {} 
+            self.json_dict[uid]['coords'] = system.coords
+    def json_to_file(self, filename):
+        ''' Output JSON to file
+        '''
         with open(filename, "w") as text_file:
-            text_file.write(json.dumps(json_dict))
+            text_file.write(json.dumps(self.json_dict))
         
 # Define a list for cloud systems
 def read_RDT_section4(filename):
     ''' Read text output of RDT, section 4
     '''
+    text_file=open(filename,'r')
+    lines = text_file.read().splitlines()
+    text_file.close()
+    
+    # Indices of start of all systems
+    startstring = 'Number of points of contour of the cloud system'
+    startinds = [i for i, s in enumerate(lines) if startstring in s]
+    
+    # Loop over all systems and store details
     cs = CloudSystems()
-
-    uid = 0
-    with open(file) as f:
-        for line in f:
-            # New system if num vertices specified
-            if line.find('Number of points of contour of the cloud system') >= 0:
-                uid += 1
-                num_vertices = int(line.split(' ')[-1])
-                cs.systems.append(System(uid, num_vertices))
-                continue
-            # If these are coordinates, they alternate latitude, then longitude
-            if line.find('Latitude (coarse accuracy) of one point of contour') >= 0:
-                lat_lon = [float(line.split(' ')[-1])]
-                continue
-            elif line.find('Longitude (coarse accuracy) of one point of contour') >= 0:
-                lat_lon.append(float(line.split(' ')[-1]))
+    for uid, ind in enumerate(startinds):
+        if uid == len(startinds) - 1:
+            system_lines = lines[ind:-1]
+        else:
+            system_lines = lines[ind:startinds[uid + 1]]
+            
+        # Only keep this system if the convective type is known
+        convstring = 'Convective system or other cloud system'
+        conv_line = [i for i in system_lines if convstring in i]
+        if conv_line[0].split(' ')[-1].upper().find('UNKNOWN') < 0:
+            cs.systems.append(System(uid))
+        
+            # Grab all coords (lons follow lats)
+            latstring = 'Latitude (coarse accuracy) of one point of contour'
+            latinds = [i for i, s in enumerate(system_lines) if latstring in s]
+            for latind in latinds:
+                lat_lon = [float(system_lines[latind].split(' ')[-1])]
+                lat_lon.append(float(system_lines[latind + 1].split(' ')[-1]))
                 cs.systems[-1].add_coord(lat_lon)
-                continue
-            # Only keep this system is the convective type is known
-            if line.find('Convective system or other cloud system') >= 0:
-                if line.split(' ')[-1].upper().find('UNKNOWN') >= 0:
-                    cs.systems.pop()
     return cs
     
 if __name__ == "__main__":
     cs = read_RDT_section4(file)
-    cs.to_json_file(outfile)
-    
+    cs.to_json()
+    cs.json_to_file(outfile)
