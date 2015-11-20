@@ -98,13 +98,13 @@ function CanvasState(canvas) {
   }, true);
 
   // If within a shape, show that shape's data in the info box
-  canvas.addEventListener('mousedown', function(e) {
+/*  canvas.addEventListener('mousedown', function(e) {
     for (var i = 0; i < myState.shapes.length; i++) {
       if (myState.shapes[i].active) {
         $('#info_area').html(myState.shapes[i].name);
       }
     }
-  }, true);
+  }, true);*/
 }
 
 CanvasState.prototype.addShape = function(shape) {
@@ -130,6 +130,12 @@ CanvasState.prototype.draw = function(mouse) {
       if (ctx.isPointInPath(mouse.x, mouse.y)) {
         shapes[i].active = true;
         shapes[i].draw(ctx, 'selected');
+
+        // Show a div with information from this shape inside
+        if (!$('#info_div').length) {
+          $("body").append('<div id="info_div">' + shapes[i].name + '</div>');
+          $('#info_div').offset({top:mouse.y + 30, left:mouse.x + 30}).width(250);
+        }
       }
       else {
         shapes[i].active = false;
@@ -143,6 +149,9 @@ CanvasState.prototype.draw = function(mouse) {
   }
   else {
     ctx.canvas.style.cursor = 'default';
+
+    // Remove info div
+    $('#info_div').remove();
   }
 }
 
@@ -177,7 +186,7 @@ CanvasState.prototype.getMouse = function(e) {
 Math.radians = function(degrees) {
   return degrees * Math.PI / 180;
 };
- 
+
 // Converts from radians to degrees.
 Math.degrees = function(radians) {
   return radians * 180 / Math.PI;
@@ -197,7 +206,7 @@ function geo_to_stereo(lon, lat){
 
 // When document ready...
 $(document).ready(function() {
-      
+
   var s = new CanvasState(document.getElementById('canvas'));
 
   $.getJSON('features.json')

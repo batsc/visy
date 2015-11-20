@@ -1,8 +1,17 @@
 #canvas {
-  border:  dashed black 1px;
-  position: absolute;
+  border:               dashed black 1px;
+  position:             absolute;
+  z-index:              0;
 }
 
 img {
-  position: absolute;
+  position:             absolute;
+  z-index:              -1;
+}
+
+#info_div {
+  border:               solid black 1px;
+  background-color:     #dfdfdf;
+  z-index:              1;
+  padding:              3px;
 }
