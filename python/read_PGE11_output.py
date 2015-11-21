@@ -4,12 +4,18 @@ import json
 file = '../output/SAFNWC_MSG3_RDT__201507011515_ukamv_______.buf_section4'
 outfile = '../web/features.json'
 
+params_strings = {
+    'direction' : 'Direction of motion of the cloud system',
+    'speed' : 'Speed of motion of the cloud system',
+    'Top pressure' : 'Pressureof top of the cloud system'}
+
 class System(object):
     ''' Class to contain RDT information for a detected system
     '''
     def __init__(self, id):
         self.uid = id
         self.coords = []
+        self.params = {}
     def add_coord(self, coords):
         self.coords.append(coords)
 
@@ -31,6 +37,9 @@ class CloudSystems(object):
             uid = "feature_" + "{:0>4d}".format(system.uid)
             self.json_dict[uid] = {} 
             self.json_dict[uid]['coords'] = system.coords
+            self.json_dict[uid]['params'] = {}
+            for k, v in system.params.iteritems():
+                self.json_dict[uid]['params'][k] = system.params[k]
     def json_to_file(self, filename):
         ''' Output JSON to file
         '''
@@ -70,6 +79,11 @@ def read_RDT_section4(filename):
                 lat_lon = [float(system_lines[latind].split(' ')[-1])]
                 lat_lon.append(float(system_lines[latind + 1].split(' ')[-1]))
                 cs.systems[-1].add_coord(lat_lon)
+
+            # Add parameters
+            for k, v in params_strings.iteritems():
+                cs.systems[-1].params[k] = next(i for i in system_lines if v in i).split(' ')[-1].split('.')[0]
+                
     return cs
     
 if __name__ == "__main__":

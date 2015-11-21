@@ -11,9 +11,10 @@ var botrighlon = 17.194;
 var mx,cx,my,cy;
 
 // Constructor for Shape objects to hold data for all drawn objects.
-function Shape(coords, stroke_color, name) {
-  this.coords = coords;
-  this.stroke_color = stroke_color || '#AA0000';
+function Shape(name, data) {
+  this.coords = data.coords;
+  this.params = data.params;
+  this.stroke_color = data.stroke_color || '#AA0000';
   this.name = name || 'null';
   this.active = false;
 }
@@ -133,7 +134,10 @@ CanvasState.prototype.draw = function(mouse) {
 
         // Show a div with information from this shape inside
         if (!$('#info_div').length) {
-          $("body").append('<div id="info_div">' + shapes[i].name + '</div>');
+          $("body").append('<div id="info_div"><div>' + shapes[i].name + '</div></div>');
+          for (var prop in shapes[i].params) {
+              $("#info_div").append('<div>' + prop + ' : ' + shapes[i].params[prop] + '</div>');
+          }
           $('#info_div').offset({top:mouse.y + 30, left:mouse.x + 30}).width(250);
         }
       }
@@ -212,8 +216,7 @@ $(document).ready(function() {
   $.getJSON('features.json')
     .done(function(data) {
       $.each(data, function(feature_name, feature_data) {
-        s.addShape(new Shape(feature_data.coords, feature_data.strokeStyle,
-                             feature_name));
+        s.addShape(new Shape(feature_name, feature_data));
         s.draw();
       })
     })
