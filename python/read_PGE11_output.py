@@ -5,9 +5,9 @@ file = '../output/SAFNWC_MSG3_RDT__201507011515_ukamv_______.buf_section4'
 outfile = '../web/features.json'
 
 params_strings = {
-    'direction' : 'Direction of motion of the cloud system',
-    'speed' : 'Speed of motion of the cloud system',
-    'Top pressure' : 'Pressureof top of the cloud system'}
+    'direction' : ['Direction of motion of the cloud system', '{:>03.0f}'],
+    'speed' : ['Speed of motion of the cloud system', '{:.0f} m/s'],
+    'Top pressure' : ['Pressureof top of the cloud system', '{:.0f} Pa']}
 
 class System(object):
     ''' Class to contain RDT information for a detected system
@@ -82,7 +82,11 @@ def read_RDT_section4(filename):
 
             # Add parameters
             for k, v in params_strings.iteritems():
-                cs.systems[-1].params[k] = next(i for i in system_lines if v in i).split(' ')[-1].split('.')[0]
+                val = next(i for i in system_lines if v[0] in i).split(' ')[-1].split('.')[0]
+                try:
+                    cs.systems[-1].params[k] = v[1].format(float(val))
+                except:
+                    cs.systems[-1].params[k] = val
                 
     return cs
     

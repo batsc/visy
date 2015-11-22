@@ -134,7 +134,7 @@ CanvasState.prototype.draw = function(mouse) {
 
         // Show a div with information from this shape inside
         if (!$('#info_div').length) {
-          $("body").append('<div id="info_div"><div>' + shapes[i].name + '</div></div>');
+          $("body").append('<div id="info_div"></div>');
           for (var prop in shapes[i].params) {
               $("#info_div").append('<div>' + prop + ' : ' + shapes[i].params[prop] + '</div>');
           }
