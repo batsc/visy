@@ -14,7 +14,7 @@ var mx,cx,my,cy;
 function Shape(name, data) {
   this.coords = data.coords;
   this.params = data.params;
-  this.stroke_color = data.stroke_color || '#AA0000';
+  this.contour_colour = data.contour_colour || '#AA0000';
   this.name = name || 'null';
   this.active = false;
 }
@@ -30,7 +30,7 @@ Shape.prototype.draw = function(ctx, selected) {
     ctx.lineTo(mx * x + cx, ctx.canvas.height - (my * y + cy));
   }
   ctx.closePath();
-  ctx.strokeStyle = this.stroke_color;
+  ctx.strokeStyle = this.contour_colour;
 
   // If this shape is hovered over
   if (selected) {

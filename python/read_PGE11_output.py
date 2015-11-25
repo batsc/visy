@@ -5,9 +5,17 @@ file = '../output/SAFNWC_MSG3_RDT__201507011515_ukamv_______.buf_section4'
 outfile = '../web/features.json'
 
 params_strings = {
-    'direction' : ['Direction of motion of the cloud system', '{:>03.0f}'],
-    'speed' : ['Speed of motion of the cloud system', '{:.0f} m/s'],
-    'Top pressure' : ['Pressureof top of the cloud system', '{:.0f} Pa']}
+    'Direction' : ['Direction of motion of the cloud system', '{:>03.0f}'],
+    'Speed' : ['Speed of motion of the cloud system', '{:.0f} m/s'],
+    'Top pressure' : ['Pressureof top of the cloud system', '{:.0f} Pa'],
+    'Cooling rate' : ['Cooling rate of the cloud system', '{:.5f} K/s']}
+
+codes_strings = {
+    'System type' : 'Convective system or other cloud system',
+    'Phase' : 'Phase of the life cycle of the cloud system'}
+
+# Mapping of phase to contour colour
+phase_colour_mapping = {0:'#00ffff', 1:'#ff0000', 2:'#9400d3', 3:'#0000ff'}
 
 class System(object):
     ''' Class to contain RDT information for a detected system
@@ -16,6 +24,7 @@ class System(object):
         self.uid = id
         self.coords = []
         self.params = {}
+        self.codes = {}
     def add_coord(self, coords):
         self.coords.append(coords)
 
@@ -40,6 +49,8 @@ class CloudSystems(object):
             self.json_dict[uid]['params'] = {}
             for k, v in system.params.iteritems():
                 self.json_dict[uid]['params'][k] = system.params[k]
+            # Add parameters dictated by codes
+            self.json_dict[uid]['contour_colour'] = phase_colour_mapping[system.codes['Phase']]
     def json_to_file(self, filename):
         ''' Output JSON to file
         '''
@@ -80,13 +91,18 @@ def read_RDT_section4(filename):
                 lat_lon.append(float(system_lines[latind + 1].split(' ')[-1]))
                 cs.systems[-1].add_coord(lat_lon)
 
-            # Add parameters
+            # Read parameters
             for k, v in params_strings.iteritems():
                 val = next(i for i in system_lines if v[0] in i).split(' ')[-1].split('.')[0]
                 try:
                     cs.systems[-1].params[k] = v[1].format(float(val))
                 except:
                     cs.systems[-1].params[k] = val
+
+            # Read code table values
+            for k, v in codes_strings.iteritems():
+                val = next(i for i in system_lines if v in i).split(' ')[-1].split('.')[0]
+                cs.systems[-1].codes[k] = int(val)
                 
     return cs
     
