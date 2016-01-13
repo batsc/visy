@@ -213,7 +213,7 @@ $(document).ready(function() {
 
   var s = new CanvasState(document.getElementById('canvas'));
 
-  $.getJSON('features.json')
+  $.getJSON('RDT_json_files/RDT_features_201512221245.json')
     .done(function(data) {
       $.each(data, function(feature_name, feature_data) {
         s.addShape(new Shape(feature_name, feature_data));

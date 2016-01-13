@@ -1,17 +1,20 @@
+#!/usr/local/sci/bin/python2.7
 # -*- coding: iso-8859-1 -*-
 import json
+import sys
 
-file = '../output/SAFNWC_MSG3_RDT__201507011515_ukamv_______.buf_section4'
-outfile = '../web/features.json'
+info_strings = {
+    'start index': 'Number of points of contour of the cloud system',
+    'latitude': 'Latitude-'}
 
 params_strings = {
     'Direction': ['Direction of motion of the cloud system', '{:>03.0f}'],
     'Speed': ['Speed of motion of the cloud system', '{:.0f} m/s'],
-    'Top pressure': ['Pressureof top of the cloud system', '{:.0f} Pa'],
+    'Top pressure': ['Pressure of top of the cloud system', '{:.0f} Pa'],
     'Cooling rate': ['Cooling rate of the cloud system', '{:.5f} K/s']}
 
 codes_strings = {
-    'System nature': 'Convective system or other cloud system',
+    'System nature': 'Nature (convective or not) of the cloud system',
     'Phase': 'Phase of the life cycle of the cloud system'}
 
 # CODE TABLE MAPPINGS
@@ -127,8 +130,7 @@ def read_RDT_section4(filename):
     text_file.close()
 
     # Indices of start of all systems
-    startstring = 'Number of points of contour of the cloud system'
-    startinds = [i for i, s in enumerate(lines) if startstring in s]
+    startinds = [i for i, s in enumerate(lines) if info_strings['start index'] in s]
 
     # Loop over all systems and store details
     cs = CloudSystems()
@@ -140,15 +142,12 @@ def read_RDT_section4(filename):
             system_lines = lines[ind:startinds[uid + 1]]
 
         # Only keep this system if the convective type is known
-        convstring = 'Convective system or other cloud system'
-        conv_line = [i for i in system_lines if convstring in i]
-
+        conv_line = [i for i in system_lines if codes_strings['System nature'] in i]
         if conv_line[0].split(' ')[-1].upper().find('UNKNOWN') < 0:
             cs.systems.append(System(uid))
 
             # Grab all coords (lons follow lats)
-            latstring = 'Latitude (coarse accuracy) of one point of contour'
-            latinds = [i for i, s in enumerate(system_lines) if latstring in s]
+            latinds = [i for i, s in enumerate(system_lines) if info_strings['latitude'] in s]
             for latind in latinds:
                 lat_lon = [float(system_lines[latind].split(' ')[-1])]
                 lat_lon.append(float(system_lines[latind + 1].split(' ')[-1]))
@@ -171,6 +170,11 @@ def read_RDT_section4(filename):
     return cs
 
 if __name__ == "__main__":
-    cs = read_RDT_section4(file)
+
+    if len(sys.argv) > 1:
+        s4_file = sys.argv[1]
+        json_file = sys.argv[2]
+
+    cs = read_RDT_section4(s4_file)
     cs.to_json()
-    cs.json_to_file(outfile)
+    cs.json_to_file(json_file)
