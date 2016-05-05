@@ -5,12 +5,13 @@
     "geometry": {
       "type": "MultiPoint",
       "coordinates": [
-        [-1.82, 57.61], [-7.63, 56.77], [-5.67, 50.03]
+        [-1.82, 57.61, 0, 30, 240],
+        [-7.63, 56.77, 0, 42, 120],
+        [-5.67, 50.03, 0, 24, 40]
       ]
     },
     "properties": {
-      "speed": [30, 42, 28],
-      "direction": [240, 120, 40]
+      "coordinates_description": "longitude, latitude, height (not used), speed (m/s), direction from (deg)"
     }
   }
 ]}

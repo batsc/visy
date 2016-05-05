@@ -3,7 +3,7 @@
 <head>
 <link rel="stylesheet" href="http://openlayers.org/en/v3.15.1/css/ol.css" type="text/css">
 <script src="http://openlayers.org/en/v3.15.1/build/ol.js"></script>
-<script src="//d3js.org/d3.v3.min.js"></script>
+<script src="http://d3js.org/d3.v3.min.js"></script>
 </head>
 
 <body>
@@ -64,13 +64,13 @@ var map = new ol.Map({
 /**
   * Load the geojson data and create an ol.layer.Image for that data.
   */
-d3.json('data/json/test.json', function(features) {
+d3.json('test.json', function(features) {
   console.log(features.features[0].properties);
   // Preload wind barbs using speed information from json file
   var img_array = new Array();
-  for (var i=0; i<features.features[0].properties.speed.length; i++) {
-    var spd = features.features[0].properties.speed[i];
-    img_array.push("data/met/WeatherSymbol_WMO/WeatherSymbol_WMO_WindArrowNH_" +
+  for (var i=0; i<features.features[0].geometry.coordinates.length; i++) {
+    var spd = features.features[0].geometry.coordinates[i][3];
+    img_array.push("wind_barbs/WeatherSymbol_WMO_WindArrowNH_" +
                     parseInt(spd) + ".svg");
   }
 
@@ -139,7 +139,7 @@ d3.json('data/json/test.json', function(features) {
       var barb_height = 55 / scale_barb;
 
       for (var i=0; i<features.features[0].geometry.coordinates.length; i++) {
-        var pts = features.features[0].geometry.coordinates[i];
+        var pts = features.features[0].geometry.coordinates[i].slice(0,2);
         var prj_coords = d3Projection(pts);
 
         // Save context coord system
@@ -150,7 +150,7 @@ d3.json('data/json/test.json', function(features) {
 
         // Rotate specified in radians
         // Wind barb pointy end shows direction wind is going to
-        var direction = features.features[0].properties.direction[i];
+        var direction = features.features[0].geometry.coordinates[i][4];
         // Adjust the svg barbs by 270 degrees
         if (direction > 270) {
           direction += 90;
