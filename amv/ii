@@ -1,0 +1,2 @@
+ &proj area='EW', id=3, nx=1180, ny=1180, lon1=-44.790,  lat1=61.434, lon2=17.194, lat2=32.754  /
+ &proj area='EB', id=3, nx=1950, ny=1950, lon1=-27.25,   lat1=60.1,   lon2=9.15,   lat2=43.75   /
