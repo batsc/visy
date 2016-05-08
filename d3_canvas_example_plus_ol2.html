@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+<link rel="stylesheet" href="http://openlayers.org/en/v3.15.0/css/ol.css" type="text/css">
+<script src="http://openlayers.org/en/v3.15.0/build/ol.js"></script>
+<script src="//d3js.org/d3.v3.min.js"></script>
+<script src="js/ol3-layerswitcher.js"></script>
+<link rel="stylesheet" href="css/ol3-layerswitcher.css" type="text/css">
+</head>
+
+<body>
+
+<div id="map" class="map"></div>
+
+<script>
+
+var ms_to_knots = 1 / 0.514444;
+var barb_location = "data/met/WeatherSymbol_WMO";
+
+function preloadimages(arr){
+    var newimages=[], loadedimages=0;
+    var postaction=function(){};
+    var arr=(typeof arr!="object")? [arr] : arr;
+    function imageloadpost(){
+        loadedimages++;
+        if (loadedimages==arr.length){
+            postaction(newimages); //call postaction and pass in newimages array as parameter
+        }
+    }
+    for (var i=0; i<arr.length; i++){
+        newimages[i]=new Image();
+        newimages[i].src=arr[i];
+        newimages[i].className+='svg';
+        newimages[i].onload=function(){
+            imageloadpost();
+        }
+        newimages[i].onerror=function(){
+            imageloadpost();
+        }
+    }
+    return { //return blank object with done() method
+        done:function(f){
+            postaction=f || postaction; //remember user defined callback functions to be called when images load
+        }
+    }
+}
+
+
+var map_prj = 'EPSG:4326';
+
+var map = new ol.Map({
+  controls: ol.control.defaults().extend([
+    new ol.control.ScaleLine({
+      units: 'degrees'
+    })
+  ]),
+  layers: [
+    new ol.layer.Tile({
+      title: 'Base',
+      source: new ol.source.OSM()
+    })
+  ],
+  target: 'map',
+  view: new ol.View({
+    projection: map_prj,
+    center: [0, 40],
+    zoom: 4
+  })
+});
+
+function image_index(wind) {
+  // Given a m/s wind speed, return the number associated with
+  // the appropriate wind barb SVG filename, equal to the
+  // wind speed in knots divided by 5 and rounded
+  return Math.round(wind * ms_to_knots / 5);
+}
+
+// Specify wind barbs image array. Indices of array specify the
+// speed code used in the filenames.
+var img_array = new Array();
+var filename;
+// First is calm
+filename = barb_location + "/WeatherSymbol_WMO_WindArrowCalm_00.svg";
+img_array.push(filename);
+for (var i=1; i<51; i++) {
+  filename = barb_location + "/WeatherSymbol_WMO_WindArrowNH_" +
+              ("0" + i).slice(-2) + ".svg";
+  img_array.push(filename);
+}
+
+// Array for storing canvasFunctions
+var cf_array = new Array();
+
+// Don't do anything until barb images are loaded
+preloadimages(img_array).done(function(images){
+
+  // Load the GeoJSON AMVs file
+  d3.json('data/json/test4.json', function(features) {
+
+
+    // Loop over features, i.e. AMV datasets
+    for (var f=0; f<3; f++) {
+
+      /**
+        * This function uses d3 to render the geojson features to a canvas.
+        * @param {ol.Extent} extent Extent.
+        * @param {number} resolution Resolution.
+        * @param {number} pixelRatio Pixel ratio.
+        * @param {ol.Size} size Size.
+        * @param {ol.proj.Projection} projection Projection.
+        * @return {HTMLCanvasElement} A canvas element.
+        */
+      var canvasFunction = function(extent, resolution, pixelRatio,
+          size, projection) {
+        console.log(extent, resolution, pixelRatio,
+          size, projection);
+        // Create canvas and set size
+        var canvasWidth = size[0];
+        var canvasHeight = size[1];
+        var canvas = d3.select(document.createElement('canvas'));
+        canvas.attr('width', canvasWidth).attr('height', canvasHeight);
+        var context = canvas.node().getContext('2d');
+
+        // Set the d3 geo projection and path
+        var d3Projection = d3.geo.equirectangular().scale(1).translate([0, 0]);
+        var d3Path = d3.geo.path().projection(d3Projection);
+
+        // Get the pixel bounds from the feature data set
+        var pixelBounds = d3Path.bounds(features);
+        console.log(pixelBounds);
+        var pixelBoundsWidth = pixelBounds[1][0] - pixelBounds[0][0];
+        var pixelBoundsHeight = pixelBounds[1][1] - pixelBounds[0][1];
+
+        // Get the geographical bounds from the data set
+        var geoBounds = d3.geo.bounds(features);
+        var geoBoundsLeftBottom = ol.proj.transform(geoBounds[0], map_prj, projection);
+        var geoBoundsRightTop = ol.proj.transform(geoBounds[1], map_prj, projection);
+        var geoBoundsWidth = geoBoundsRightTop[0] - geoBoundsLeftBottom[0];
+        if (geoBoundsWidth < 0) {
+          geoBoundsWidth += ol.extent.getWidth(projection.getExtent());
+        }
+        var geoBoundsHeight = geoBoundsRightTop[1] - geoBoundsLeftBottom[1];
+
+        // Calculate scaling
+        var widthResolution = geoBoundsWidth / pixelBoundsWidth;
+        var heightResolution = geoBoundsHeight / pixelBoundsHeight;
+        var r = Math.max(widthResolution, heightResolution);
+        var scale = r / (resolution / pixelRatio);
+
+        // Set the d3 view to the same as OL view
+        var center = ol.proj.transform(ol.extent.getCenter(extent), projection, map_prj);
+        d3Projection.scale(scale).center(center).translate([canvasWidth / 2, canvasHeight / 2]);
+        d3Path = d3Path.projection(d3Projection).context(context);
+
+        var scale_barb = 5;
+        var barb_width = 165 / scale_barb;
+        var barb_height = 55 / scale_barb;
+
+        for (var i=0; i<features.features[f].geometry.coordinates.length; i++) {
+          var pts = features.features[f].geometry.coordinates[i].slice(0, 3);
+          var prj_coords = d3Projection(pts);
+
+          // Save context coord system
+          context.save();
+
+          // Move origin to prj_coords
+          context.translate(prj_coords[0], prj_coords[1]);
+
+          // Rotate specified in radians
+          // Wind barb pointy end shows direction wind is going to
+          var direction = features.features[f].geometry.coordinates[i].slice(4, 5);
+          // Adjust the svg barbs by 270 degrees
+          if (direction > 270) {
+            direction += 90;
+          }
+          else {
+            direction -= 270;
+          }
+          context.rotate(Math.PI * direction / 180.0);
+
+          // Add svg image
+          // The point of the barb should be located at the coordinate
+          var spd = features.features[f].geometry.coordinates[i].slice(3, 4);
+          context.drawImage(images[image_index(spd)], -barb_width, -barb_height,
+                            barb_width, barb_height);
+
+          // Restore context coord system
+          context.restore();
+        }
+
+        return canvas[0][0];
+      }; // End canvasFunction
+
+      // Add the function to the array
+      cf_array.push(canvasFunction);
+    }
+
+    // Loop over features, i.e. AMV datasets
+    for (var f=0; f<3; f++) {
+      var layer = new ol.layer.Image({
+        title: features.features[f].properties.name + ' ' + features.features[f].properties.pressure_levels,
+        source: new ol.source.ImageCanvas({
+          canvasFunction: cf_array[f],
+          projection: map_prj
+        })
+      });
+      map.addLayer(layer);
+    }
+
+    var layerSwitcher = new ol.control.LayerSwitcher({
+      tipLabel: 'Legend'
+    });
+    map.addControl(layerSwitcher);
+
+  }); // End d3.json load
+}); // End preload barb images
+
+</script>
