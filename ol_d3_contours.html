@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+<link rel="stylesheet" href="http://openlayers.org/en/v3.15.0/css/ol.css" type="text/css">
+<script src="http://openlayers.org/en/v3.15.0/build/ol.js"></script>
+<script src="//d3js.org/d3.v3.min.js"></script>
+<script src="js/ol3-layerswitcher.js"></script>
+<link rel="stylesheet" href="css/ol3-layerswitcher.css" type="text/css">
+<link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Inconsolata" />
+
+<style>
+
+  body {
+    font-family: Inconsolata;
+  }
+
+  input {
+    width: 30px;
+  }
+
+  button:hover {
+    cursor: pointer;
+  }
+
+</style>
+</head>
+
+<body>
+<div id="map" class="map"></div>
+
+<script>
+var smooth_contours = false;
+
+var map_prj = 'EPSG:4326';
+
+var map = new ol.Map({
+  controls: ol.control.defaults().extend([
+    new ol.control.ScaleLine({
+      units: 'degrees'
+    })
+  ]),
+  layers: [
+    new ol.layer.Tile({
+      title: 'Base',
+      source: new ol.source.OSM()
+    })
+  ],
+  target: 'map',
+  view: new ol.View({
+    projection: map_prj,
+    center: [0, 40],
+    zoom: 4
+  })
+});
+
+// Load the GeoJSON AMVs file
+d3.json('heatmap.json', function(error, heatmap) {
+  if (error) throw error;
+
+  /**
+    * This function uses d3 to render the geojson features to a canvas.
+    * @param {ol.Extent} extent Extent.
+    * @param {number} resolution Resolution.
+    * @param {number} pixelRatio Pixel ratio.
+    * @param {ol.Size} size Size.
+    * @param {ol.proj.Projection} projection Projection.
+    * @return {HTMLCanvasElement} A canvas element.
+    */
+  var canvasFunction = function(extent, resolution, pixelRatio,
+      size, projection) {
+
+    // Create canvas and set size
+    var canvasWidth = size[0];
+    var canvasHeight = size[1];
+    var canvas = d3.select(document.createElement('canvas'));
+    canvas.attr('width', canvasWidth).attr('height', canvasHeight);
+    var context = canvas.node().getContext('2d');
+    canvas.attr("id", "contours");
+//    console.log(canvas);
+    // Set a d3 projection to the same as OL view
+    var center = ol.proj.transform(ol.extent.getCenter(extent),
+                                   projection, map_prj);
+    var scale = 180 / (Math.PI * resolution);
+    var d3Projection = d3.geo.equirectangular()
+                         .scale(scale).center(center)
+                         .translate([canvasWidth / 2, canvasHeight / 2]);
+
+    var dx = heatmap[0].length,
+        dy = heatmap.length;
+
+    var tl = [d3.select('#tl_lon').attr('value'),
+              d3.select('#tl_lat').attr('value')],
+        br = [d3.select('#br_lon').attr('value'),
+              d3.select('#br_lat').attr('value')];
+
+    var g_thresh = d3.select('#g_thresh').attr('value'),
+        a_thresh = d3.select('#a_thresh').attr('value'),
+        r_thresh = d3.select('#r_thresh').attr('value');
+
+    var alpha = Math.floor(255 * d3.select("#c_alpha").attr('value'));
+
+    var tl_pix = d3Projection(tl),
+        br_pix = d3Projection(br);
+//    console.log('TLpix',tl_pix);
+//    console.log('BRpix',br_pix);
+
+    var tl_ext_pix = d3Projection(extent.slice(0,2)),
+        br_ext_pix = d3Projection(extent.slice(2));
+//    console.log('tl_pix_ext',tl_ext_pix);
+//    console.log('br_pix_ext',br_ext_pix);
+
+
+    var coverageWidth = Math.round(Math.min(br_pix[0], br_ext_pix[0]) -
+                                   Math.max(tl_pix[0], tl_ext_pix[0])),
+        coverageHeight = Math.round(Math.min(br_pix[1], tl_ext_pix[1]) -
+                                    Math.max(tl_pix[1], br_ext_pix[1]));
+//    console.log('covW',coverageWidth);
+//    console.log('covH',coverageHeight);
+
+    var plotWidth = Math.round(br_pix[0] - tl_pix[0]),
+        plotHeight = Math.round(br_pix[1] - tl_pix[1]);
+//    console.log('plotWidth', plotWidth);
+//    console.log('plotHeight', plotHeight);
+
+    // Function to return colour based on input value
+    function colour(value) {
+
+      // Clear
+      if (value < g_thresh) {
+//         return {'r': 0, 'g': 0, 'b': 0, 'a': 0};
+        return {'r': 0, 'g': 0, 'b': 0, 'a': 100};
+      }
+      // Green
+      else if (value >= g_thresh && value < a_thresh) {
+        return {'r': 0, 'g': 255, 'b': 0, 'a': alpha};
+      }
+      // Amber
+      else if (value >= a_thresh && value < r_thresh) {
+        return {'r': 255, 'g': 191, 'b': 0, 'a': alpha};
+      }
+      // Red
+      else if (value >= r_thresh) {
+        return {'r': 255, 'g': 0, 'b': 0, 'a': alpha};
+      }
+    }
+
+//    var image = context.createImageData(coverageWidth, coverageHeight);
+    var image = context.createImageData(plotWidth, plotHeight);
+    var d1 = new Date();
+    var a, b, c, p = -1, i, j, ival, jval, ival_p, jval_p;
+//    for (var y = 0; y < coverageHeight; ++y) {
+//      for (var x = 0; x < coverageWidth; ++x) {
+    for (var y = 0; y < plotHeight; ++y) {
+      for (var x = 0; x < plotWidth; ++x) {
+
+//        i = Math.floor(x * dx / coverageWidth);
+//        j = Math.floor(y * dy / coverageHeight);
+        i = Math.floor(x * dx / plotWidth);
+        j = Math.floor(y * dy / plotHeight);
+        c = colour(heatmap[j][i]);
+
+        // If want better than nearest neighbour
+        if (smooth_contours) {
+          var ip = i + 1,
+              jp = j + 1;
+          if (ip != dx && jp != dy) {
+//            a = (heatmap[j][ip] - heatmap[j][i]) / (coverageWidth / dx);
+//            b = x - i * (coverageWidth / dx);
+            a = (heatmap[j][ip] - heatmap[j][i]) / (plotWidth / dx);
+            b = x - i * (plotWidth / dx);
+            ival = heatmap[j][i] + a * b;
+
+//            a = (heatmap[jp][i] - heatmap[j][i]) / (coverageHeight / dy);
+//            b = y - j * (coverageHeight / dy);
+            a = (heatmap[jp][i] - heatmap[j][i]) / (plotHeight / dy);
+            b = y - j * (plotHeight / dy);
+            jval = heatmap[j][i] + a * b;
+
+            c = colour(Math.round((ival + jval) / 2));
+          }
+        }
+
+        image.data[++p] = c['r'];
+        image.data[++p] = c['g'];
+        image.data[++p] = c['b'];
+        image.data[++p] = c['a'];
+      }
+    }
+    var d2 = new Date();
+
+//    console.log('Secs', d2.getTime() - d1.getTime());
+
+//    context.putImageData(image, Math.max(tl_pix[0], tl_ext_pix[0]),
+//                                Math.max(tl_pix[1], br_ext_pix[1]));
+    context.putImageData(image, tl_pix[0], tl_pix[1]);
+
+    return canvas[0][0];
+  }; // End canvasFunction
+
+  var layer = new ol.layer.Image({
+    title: 'Contours',
+    source: new ol.source.ImageCanvas({
+      canvasFunction: canvasFunction,
+      projection: map_prj
+    })
+  });
+  map.addLayer(layer);
+
+  // Set field values functionality
+  var fields = ['tl_lon', 'tl_lat', 'br_lon', 'br_lat', 'c_alpha',
+                'r_thresh', 'a_thresh', 'g_thresh'];
+  for (var f=0; f<fields.length; f++) {
+    d3.select("#" + fields[f]).on("input", function() {
+      d3.select(this).attr("value", this.value);
+      layer.getSource().changed();
+    });
+  }
+
+  // Set smooth button functionality
+  d3.select('#smooth').on("click", function() {
+    if (smooth_contours) {
+      smooth_contours = false;
+      d3.select('#smooth').text('Smooth contours');
+    }
+    else {
+      smooth_contours = true;
+      d3.select('#smooth').text('Unsmooth contours');
+    }
+    layer.getSource().changed();
+  });
+
+  var layerSwitcher = new ol.control.LayerSwitcher({
+    tipLabel: 'Legend'
+  });
+  map.addControl(layerSwitcher);
+
+}); // End d3.json load
+
+
+</script>
+
+<!--
+There are 87 x values and 61 y values
+As an example, set lonmin = -20, lonmax = 23, deltax = 0.5
+and latmin = 30, latmax=60, deltay=0.5
+-->
+
+<div id='test'>The contours show data from a 2D array taken from
+  <a href="https://bl.ocks.org/mbostock/3074470">https://bl.ocks.org/mbostock/3074470</a>.
+  The array shape is 87, 61 (x, y), max value = 195, min value = 94.
+</div>
+
+<div>Specify top left coordinate:
+  <input value='-20' type='text' id='tl_lon' autocomplete='off'/>E,
+  <input value='60' type='text' id='tl_lat' autocomplete='off'/>N
+</div>
+
+<div>Specify bottom right:
+  <input value='23' type='text' id='br_lon' autocomplete='off'/>E,
+  <input value='30' type='text' id='br_lat' autocomplete='off'/>N
+</div>
+
+<div>Contour alpha:
+  <input value='0.5' type='text' id='c_alpha' autocomplete='off'/>
+</div>
+
+<div>Thresholds:
+  Red
+  <input value='170' type='text' id='r_thresh' autocomplete='off'/>
+  Amber
+  <input value='140' type='text' id='a_thresh' autocomplete='off'/>
+  Green
+  <input value='110' type='text' id='g_thresh' autocomplete='off'/>
+  (values below green not shown)
+</div>
+
+<div>
+  <button type="button" id="smooth">Smooth contours</button>
+</div>
+
+
+
+</body>
+</html>
