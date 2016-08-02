@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+</head>
+
+<body>
+
+<canvas id="canvas" width="600" height="600"></canvas>
+
+<script>
+
+function preloadimages(arr) {
+  var newimages=[], loadedimages=0;
+  var postaction=function() {};
+  var arr=(typeof arr!="object")? [arr] : arr;
+  function imageloadpost(){
+    loadedimages++;
+    if (loadedimages==arr.length) {
+      postaction(newimages); //call postaction and pass in newimages array as parameter
+    }
+  }
+  for (var i=0; i<arr.length; i++) {
+    newimages[i]=new Image();
+    newimages[i].src=arr[i];
+    newimages[i].className+='svg';
+    newimages[i].onload=function() {
+      imageloadpost();
+    }
+    newimages[i].onerror=function(){
+      imageloadpost();
+    }
+  }
+  return { //return blank object with done() method
+    done:function(f) {
+      postaction=f || postaction; //remember user defined callback functions to be called when images load
+    }
+  }
+}
+
+var ms_to_knots = 1 / 0.514444;
+var barb_location = "WeatherSymbol_WMO";
+var scale_barb = 1;
+var barb_width = 165 / scale_barb;
+var barb_height = 55 / scale_barb;
+
+function image_index(wind) {
+  // Given a m/s wind speed, return the number associated with
+  // the appropriate wind barb SVG filename, equal to the
+  // wind speed in knots divided by 5 and rounded
+  return Math.round(wind * ms_to_knots / 5);
+}
+
+// Specify wind barbs image array. Indices of array specify the
+// speed code used in the filenames.
+var img_array = new Array();
+var filename;
+// First is calm
+filename = barb_location + "/WeatherSymbol_WMO_WindArrowCalm_00.svg";
+img_array.push(filename);
+for (var i=1; i<51; i++) {
+  filename = barb_location + "/WeatherSymbol_WMO_WindArrowNH_" +
+              ("0" + i).slice(-2) + ".svg";
+  img_array.push(filename);
+}
+
+coord = [100, 150];
+speed = 6;
+direc = 45;
+
+var colormaps = {
+  "rainbow":[
+    {"index":0,"rgb":[150,0,90]},
+    {"index":0.125,"rgb":[0,0,200]},
+    {"index":0.25,"rgb":[0,25,255]},
+    {"index":0.375,"rgb":[0,152,255]},
+    {"index":0.5,"rgb":[44,255,150]},
+    {"index":0.625,"rgb":[151,255,0]},
+    {"index":0.75,"rgb":[255,234,0]},
+    {"index":0.875,"rgb":[255,111,0]},
+    {"index":1,"rgb":[255,0,0]}]
+  };
+
+function byte2Hex(n) {
+  var nybHexString = "0123456789ABCDEF";
+  return String(nybHexString.substr((n >> 4) & 0x0F,1)) + nybHexString.substr(n & 0x0F,1);
+}
+
+function RGB2Color(r,g,b) {
+  return '#' + byte2Hex(r) + byte2Hex(g) + byte2Hex(b);
+}
+
+function get_RGB(cmap_name, value, max_value) {
+  var value_norm = value / max_value;
+  var cmap = colormaps[cmap_name];
+
+  for (var i=0; i<cmap.length - 1; i++) {
+    if (cmap[i]['index'] < value_norm && cmap[i + 1]['index'] >= value_norm) {
+      var adj = (value_norm - cmap[i]['index']) /
+                (cmap[i + 1]['index'] - cmap[i]['index']);
+
+      var R = Math.round(adj * (cmap[i + 1]['rgb'][0] - cmap[i]['rgb'][0]) +
+              cmap[i]['rgb'][0]);
+      var G = Math.round(adj * (cmap[i + 1]['rgb'][1] - cmap[i]['rgb'][1]) +
+              cmap[i]['rgb'][1]);
+      var B = Math.round(adj * (cmap[i + 1]['rgb'][2] - cmap[i]['rgb'][2]) +
+              cmap[i]['rgb'][2]);
+
+      return RGB2Color(R,G,B);
+    }
+  }
+}
+
+
+// Don't do anything until barb images are loaded
+preloadimages(img_array).done(function(images){
+
+  // Canvas
+  var canvas = document.getElementById("canvas");
+
+  // Canvas context
+  var context = canvas.getContext("2d");
+
+  // Save context coord system
+  context.save();
+
+  // Move origin to prj_coords
+  context.translate(coord[0], coord[1]);
+
+  // Rotate specified in radians
+  // Wind barb pointy end shows direction wind is going to
+  var direction = direc;
+  // Adjust the svg barbs by 270 degrees
+  if (direction > 270) {
+    direction += 90;
+  }
+  else {
+    direction -= 270;
+  }
+  context.rotate(Math.PI * direction / 180.0);
+
+  // Add svg image
+  // The point of the barb should be located at the coordinate
+//  var spd = speed;
+//  console.log(image_index(spd));
+//  console.log(images[image_index(spd)].src);
+
+  $.get(images[image_index(speed)].src, function() {
+  }, 'xml')
+  .done(function(svgXml) {
+
+    // Add svg image
+    // The point of the barb should be located at the coordinate
+    //var spd = speed;
+    console.log(speed);
+
+    // convert the XML tree to a string
+    var svgAsString = new XMLSerializer().serializeToString(svgXml);
+
+    // Change colour
+    svgAsString = svgAsString.replace(/#000000/g, get_RGB('rainbow', speed, 50));
+
+    // create a new image with the svg string as an ObjectUrl
+    var svgBlob = new Blob([svgAsString], {type: "image/svg+xml;charset=utf-8"});
+    var url = window.URL.createObjectURL(svgBlob);
+    var img = new Image();
+    img.src = url;
+
+    // copy it to the canvas
+    img.onload = function() {
+      context.drawImage(img, -barb_width, -barb_height,
+                        barb_width, barb_height);
+      window.URL.revokeObjectURL(svgBlob);
+    }
+
+  });
+  // Restore context coord system
+//  context.restore();
+
+});
+
+</script>
+</body>
+</html>
+
+
