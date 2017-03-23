@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <mrfgen_configuration>
  <date_of_data>20170322</date_of_data>
+ <time_of_data>151500</time_of_data>
  <parameter_name>EIYE50</parameter_name>
- <input_dir>/data/local/cbatston/sps/newcode2/run/products/EIYE50_201703221515</input_dir>
- <output_dir>/data/local/cbatston/Work/onearth/MRFs</output_dir>
- <working_dir>/data/local/cbatston/Work/onearth/working</working_dir>
- <logfile_dir>/data/local/cbatston/Work/onearth/logs</logfile_dir>
- <mrf_empty_tile_filename>/data/local/cbatston/Work/onearth/empty_tiles/Blank_RGBA_256.png</mrf_empty_tile_filename>
+ <input_dir>/home/vagrant/my_setup/tiles/EIYE50_201703221515</input_dir>
+ <output_dir>/home/vagrant/my_setup/mrfs</output_dir>
+ <working_dir>/home/vagrant/my_setup/working</working_dir>
+ <logfile_dir>/home/vagrant/my_setup/logs</logfile_dir>
+ <mrf_empty_tile_filename>/usr/share/onearth/empty_tiles/Blank_RGBA_256.png</mrf_empty_tile_filename>
  <mrf_blocksize>256</mrf_blocksize>
  <mrf_compression_type>PPNG</mrf_compression_type>
  <target_x>16384</target_x>
  <extents>-180,-90,180,90</extents>
- <colormap></colormap>
 </mrfgen_configuration>
