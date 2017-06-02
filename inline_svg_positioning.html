@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<head>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+
+<style>
+.ff {
+  color : red;
+  background-color: blue;
+  }
+</style>
+
+</head>
+
+<body>
+
+<div id="container" style="width:400px; height:400px; border: 1px dashed">
+</div>
+
+<script>
+
+var barb_location = "WeatherSymbol_WMO_test",
+    filename;
+var bb;
+//for (var i=1; i<51; i++) {
+for (var i=1; i<2; i++) {
+  filename = barb_location + "/WeatherSymbol_WMO_WindArrowNH_" +
+              ("0" + i).slice(-2) + ".svg";
+  $.get(filename, function(data) {
+
+    var svg = document.importNode(data.documentElement, true);
+    svg.setAttribute('class', 'ff');
+    bb=svg;
+//    console.log(bb);
+    $('#container').append(svg);
+  });
+}
+</script>
+</body>
+</html>
