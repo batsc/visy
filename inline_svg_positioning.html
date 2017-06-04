@@ -3,9 +3,9 @@
 <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
 
 <style>
-.ff {
-  color : red;
-  background-color: blue;
+.ff path {
+  fill : blue !important;
+  stroke : blue !important;
   }
 </style>
 
@@ -21,8 +21,8 @@
 var barb_location = "WeatherSymbol_WMO_test",
     filename;
 var bb;
-//for (var i=1; i<51; i++) {
-for (var i=1; i<2; i++) {
+for (var i=1; i<51; i++) {
+//for (var i=9; i<15; i++) {
   filename = barb_location + "/WeatherSymbol_WMO_WindArrowNH_" +
               ("0" + i).slice(-2) + ".svg";
   $.get(filename, function(data) {
