@@ -3,6 +3,10 @@
 <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
 
 <style>
+
+svg.ff {
+  position : absolute;
+}
 .ff path {
   fill : blue !important;
   stroke : blue !important;
@@ -21,14 +25,18 @@
 var barb_location = "WeatherSymbol_WMO_test",
     filename;
 var bb;
-for (var i=1; i<51; i++) {
-//for (var i=9; i<15; i++) {
+//for (var i=1; i<51; i++) {
+for (var i=14; i<16; i++) {
   filename = barb_location + "/WeatherSymbol_WMO_WindArrowNH_" +
               ("0" + i).slice(-2) + ".svg";
   $.get(filename, function(data) {
 
     var svg = document.importNode(data.documentElement, true);
     svg.setAttribute('class', 'ff');
+//    svg.setAttribute('transform', '');
+var rot = parseInt(i*2 +(i-14)*20);
+console.log(rot);
+    svg.setAttribute('transform', 'scale(0.15) translate(82.5 27.5) rotate(' + rot + ' 82.5 27.5)');
     bb=svg;
 //    console.log(bb);
     $('#container').append(svg);
