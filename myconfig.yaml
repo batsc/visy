@@ -1,0 +1,33 @@
+
+services:
+  demo:
+  wmts:
+    restful: true
+    kvp: true
+  wms:
+    md:
+      title: MapProxy EUMETVIEW WMS Proxy
+      abstract: This is a minimal EUMETVIEW MapProxy example.
+
+sources:
+  test_wms:
+    type: wms
+    req:
+      url: http://eumetview.eumetsat.int/geoserver/wms
+      layers: meteosat:msg_airmass
+  my_tile_source:
+    type: tile
+    url: https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/2012-07-09/250m/%(z)s/%(y)s/%(x)s%%2Fjpg
+
+caches:
+  mycache:
+    grids: [GLOBAL_MERCATOR]
+    sources: [my_tile_source]
+
+layers:
+  - name: cascaded_test
+    title: Cascaded Test Layer
+    sources: [test_wms]
+  - name: my_wmts_layer
+    title: WMS layer from tiles
+    sources: [mycache]
